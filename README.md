@@ -13,7 +13,7 @@ This spec is an attempt to push for a stable replacement of Ruby 1.8.x with 1.9.
     RUBY_SUBVER=p551
     wget http://ftp.ruby-lang.org/pub/ruby/1.9/${RUBY_VER}-${RUBY_SUBVER}.tar.gz
     cd ~/rpmbuild/SPECS
-    wget https://raw.github.com/imeyer/${RUBY_VER}-rpm/master/ruby19.spec
+    wget https://raw.github.com/xiexianbin/ruby-rpm/master/ruby19.spec
     rpmbuild -bb ruby19.spec
     ARCH=`uname -m`
     KERNEL_REL=`uname -r`
