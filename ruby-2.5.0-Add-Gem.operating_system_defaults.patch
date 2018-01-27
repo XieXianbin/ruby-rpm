@@ -1,0 +1,80 @@
+From 60eb961c25f801ee43ca1be9393ab2f0a0546677 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?V=C3=ADt=20Ondruch?= <vondruch@redhat.com>
+Date: Tue, 19 Dec 2017 14:00:20 +0100
+Subject: [PATCH] Add Gem.operating_system_defaults to allow packagers to
+ override defaults.
+
+This change allows Ruby packagers to override defaults and lazily query
+them.
+
+This is very much the same change as #1644 to treat the
+operating_system defaults the same way as platform defaults.
+---
+ lib/rubygems/config_file.rb |  2 +-
+ lib/rubygems/defaults.rb    | 21 ++++++++++++++++++++-
+ test/rubygems/test_gem.rb   |  7 +++++++
+ 3 files changed, 28 insertions(+), 2 deletions(-)
+
+diff --git a/lib/rubygems/config_file.rb b/lib/rubygems/config_file.rb
+index a4efed0f5a..deee38e6d9 100644
+--- a/lib/rubygems/config_file.rb
++++ b/lib/rubygems/config_file.rb
+@@ -48,7 +48,7 @@ class Gem::ConfigFile
+   # For Ruby packagers to set configuration defaults.  Set in
+   # rubygems/defaults/operating_system.rb
+ 
+-  OPERATING_SYSTEM_DEFAULTS = {}
++  OPERATING_SYSTEM_DEFAULTS = Gem.operating_system_defaults
+ 
+   ##
+   # For Ruby implementers to set configuration defaults.  Set in
+diff --git a/lib/rubygems/defaults.rb b/lib/rubygems/defaults.rb
+index 43d57fc808..b8222877ae 100644
+--- a/lib/rubygems/defaults.rb
++++ b/lib/rubygems/defaults.rb
+@@ -177,7 +177,26 @@ def self.vendor_dir # :nodoc:
+   end
+ 
+   ##
+-  # Default options for gem commands.
++  # Default options for gem commands for Ruby packagers.
++  #
++  # The options here should be structured as an array of string "gem"
++  # command names as keys and a string of the default options as values.
++  #
++  # Example:
++  #
++  # def self.operating_system_defaults
++  #   {
++  #       'install' => '--no-rdoc --no-ri --env-shebang',
++  #       'update' => '--no-rdoc --no-ri --env-shebang'
++  #   }
++  # end
++
++  def self.operating_system_defaults
++    {}
++  end
++
++  ##
++  # Default options for gem commands for Ruby implementers.
+   #
+   # The options here should be structured as an array of string "gem"
+   # command names as keys and a string of the default options as values.
+diff --git a/test/rubygems/test_gem.rb b/test/rubygems/test_gem.rb
+index 3225a05c6b..62b80c4945 100644
+--- a/test/rubygems/test_gem.rb
++++ b/test/rubygems/test_gem.rb
+@@ -1802,6 +1802,13 @@ def test_use_gemdeps_specific
+     ENV['RUBYGEMS_GEMDEPS'] = rubygems_gemdeps
+   end
+ 
++  def test_operating_system_defaults
++    operating_system_defaults = Gem.operating_system_defaults
++
++    assert operating_system_defaults != nil
++    assert operating_system_defaults.is_a? Hash
++  end
++
+   def test_platform_defaults
+     platform_defaults = Gem.platform_defaults
+ 

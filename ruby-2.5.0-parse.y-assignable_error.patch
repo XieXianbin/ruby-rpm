@@ -1,0 +1,80 @@
+From: nobu <nobu@b2dd03c8-39d4-4d8f-98ff-823fe69b080e>
+Date: Sun, 31 Dec 2017 11:25:38 +0000
+Subject: [PATCH] parse.y: assignable_error
+
+* parse.y (assignable_gen): should return valid NODE always even
+  on errors.  [ruby-core:84565] [Bug #14261]
+
+git-svn-id: svn+ssh://ci.ruby-lang.org/ruby/trunk@61523 b2dd03c8-39d4-4d8f-98ff-823fe69b080e
+---
+ parse.c                 | 14 ++++----------
+ test/ruby/test_parse.rb |  6 ++++++
+ 2 files changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/parse.c b/parse.c
+index 08c3461f7096..c260a046dc33 100644
+--- a/parse.c
++++ b/parse.c
+@@ -6593,10 +6593,6 @@
+ #line 1984 "parse.y" /* yacc.c:1646  */
+     {
+ 			(yyval.node) = assignable(var_field((yyvsp[0].id)), 0, &(yyloc));
+-		    /*%%%*/
+-			if (!(yyval.node)) (yyval.node) = new_begin(0, &(yyloc));
+-		    /*%
+-		    %*/
+ 		    }
+ #line 6598 "parse.c" /* yacc.c:1646  */
+     break;
+@@ -6605,10 +6601,6 @@
+ #line 1992 "parse.y" /* yacc.c:1646  */
+     {
+ 			(yyval.node) = assignable(var_field((yyvsp[0].id)), 0, &(yyloc));
+-		    /*%%%*/
+-			if (!(yyval.node)) (yyval.node) = new_begin(0, &(yyloc));
+-		    /*%
+-		    %*/
+ 		    }
+ #line 6610 "parse.c" /* yacc.c:1646  */
+     break;
+@@ -16034,11 +16026,13 @@
+ #ifdef RIPPER
+     ID id = get_id(lhs);
+ # define assignable_result(x) (lhs)
++# define assignable_error() (lhs)
+ # define parser_yyerror(parser, x) (lhs = assign_error_gen(parser, lhs))
+ #else
+ # define assignable_result(x) assignable_result0(x, location)
++# define assignable_error() new_begin(0, location)
+ #endif
+-    if (!id) return assignable_result(0);
++    if (!id) return assignable_error();
+     switch (id) {
+       case keyword_self:
+ 	yyerror0("Can't change the value of self");
+@@ -16101,7 +16095,7 @@
+ 	compile_error(PARSER_ARG "identifier %"PRIsVALUE" is not valid to set", rb_id2str(id));
+     }
+   error:
+-    return assignable_result(0);
++    return assignable_error();
+ #undef assignable_result
+ #undef parser_yyerror
+ }
+diff --git a/test/ruby/test_parse.rb b/test/ruby/test_parse.rb
+index e26bcdc07e19..15c6245bac2e 100644
+--- a/test/ruby/test_parse.rb
++++ b/test/ruby/test_parse.rb
+@@ -746,6 +746,12 @@ def foo
+         end
+       END
+     end
++    assert_raise(SyntaxError) do
++      eval "#{<<~"begin;"}\n#{<<~'end;'}", nil, __FILE__, __LINE__+1
++      begin;
++        x, true
++      end;
++    end
+   end
+ 
+   def test_block_dup
